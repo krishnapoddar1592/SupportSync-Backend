@@ -15,14 +15,15 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Controller
 @CrossOrigin(origins =  {"http://localhost:8081","http://localhost:8082"})
@@ -43,6 +44,7 @@ public class ChatController {
 
     @Autowired
     private UserRepository userRepository;
+
 
     // This method handles incoming messages and stores them in the database.
     @MessageMapping("/chat.sendMessage")
@@ -139,8 +141,77 @@ public class ChatController {
         }
     }
 
+    @GetMapping("/users")
+    public ResponseEntity<List<AppUser>> getAllUsers() {
+        List<AppUser> users = userRepository.findAll();
+        return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/users/{id}")
+    public ResponseEntity<AppUser> getUserById(@PathVariable Long id) {
+        return userRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/chat/sessions")
+    public ResponseEntity<List<ChatSession>> getAllChatSessions() {
+        List<ChatSession> sessions = chatSessionRepository.findAll();
+        return ResponseEntity.ok(sessions);
+    }
+
+    @GetMapping("/chat/sessions/{id}")
+    public ResponseEntity<ChatSession> getChatSessionById(@PathVariable Long id) {
+        return chatSessionRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/chat/sessions/{id}/end")
+    public ResponseEntity<ChatSession> endChatSession(@PathVariable Long id) {
+        return chatSessionRepository.findById(id).map(session -> {
+            session.setEndedAt(LocalDateTime.now());
+            chatSessionRepository.save(session);
+            return ResponseEntity.ok(session);
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+
+    @GetMapping("/chat/sessions/{sessionId}/messages")
+    public ResponseEntity<List<Message> >getMessagesBySession(@PathVariable Long sessionId) {
+        List<Message> result=messageRepository.findAll()
+                .stream()
+                .filter(message -> message.getChatSession() != null && message.getChatSession().getId().equals(sessionId))
+                .toList();
+        System.out.println(result);
+        return ResponseEntity.ok(result);
+    }
+
+
+    @GetMapping("/chat/sessions/{id}/summary")
+    public ResponseEntity<?> getChatSessionSummary(@PathVariable Long id) {
+        return chatSessionRepository.findById(id)
+                .map(session -> {
+                    long totalMessages = messageRepository.findAll()
+                            .stream()
+                            .filter(message -> message.getChatSession() != null &&
+                                    Objects.equals(message.getChatSession().getId(), id))
+                            .count();
+
+                    return ResponseEntity.ok(Map.of(
+                            "sessionId", session.getId(),
+                            "startedAt", session.getStartedAt(),
+                            "endedAt", session.getEndedAt() != null ? session.getEndedAt() : "Still ongoing",
+                            "totalMessages", totalMessages
+                    ));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 
 
 
-
+    @GetMapping("/health")
+    public ResponseEntity<String> healthCheck() {
+        return ResponseEntity.ok("Application is running");
+    }
 }
