@@ -7,6 +7,9 @@ import com.chatSDK.SupportSync.User.AddAgentRequest;
 import com.chatSDK.SupportSync.User.AppUser;
 import com.chatSDK.SupportSync.messages.Message;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
@@ -15,10 +18,20 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
 
 @Controller
-@CrossOrigin(origins =  {"http://localhost:8081/","http://localhost:8082/"})
+@CrossOrigin(origins =  {"http://localhost:8081","http://localhost:8082"})
 public class ChatController {
+    @Value("${file.upload-dir}")
+    private String uploadDir;
+
+    @Value("${file.access-dir}")
+    private String accessDir;
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
@@ -70,6 +83,7 @@ public class ChatController {
     @MessageMapping("/chat.addAgent")
     @SendTo("/topic/messages")
     public Message addAgent(@Payload AddAgentRequest request) {
+        System.out.println(request.toString());
         System.out.println(request.getUser().toString() + " " + request.getSessionTemp().toString());
         ChatSession session = chatSessionRepository.findById(request.getSessionTemp().getId())
                 .orElseThrow(() -> new RuntimeException("Chat session not found"));
@@ -104,6 +118,27 @@ public class ChatController {
         // Return a response entity with the created chat session
         return chatSession;
     }
+
+    @PostMapping("/chat/uploadImage")
+    @CrossOrigin(origins = "http://localhost:8081")
+    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
+        System.out.println(file.getOriginalFilename());
+        try {
+            // Save file to the server
+            String imagePath = uploadDir + file.getOriginalFilename();
+            String accessPath=accessDir+file.getOriginalFilename();
+            file.transferTo(new File(imagePath));
+            return ResponseEntity.ok(accessPath); // Return the image path
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading image");
+        }
+        catch (Exception e){
+            System.out.println(e.getMessage());
+            return ResponseEntity.internalServerError().body("error");
+        }
+    }
+
 
 
 

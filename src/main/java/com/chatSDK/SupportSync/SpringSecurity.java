@@ -5,25 +5,40 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import static org.springframework.security.config.Customizer.withDefaults;
+import java.util.Arrays;
 
 @Configuration
 public class SpringSecurity {
+
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        //authenticate the user before giving the access of api
-        http.authorizeHttpRequests(
-                auth->auth.requestMatchers("/health-checkup").permitAll().anyRequest().authenticated()
-        );
-
-        // if req not authenticated then show a popup
-        http.httpBasic(withDefaults());
-        // disable csrf token
-
-        http.csrf(AbstractHttpConfigurer::disable);
+    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(authorize -> authorize
+                    .requestMatchers("/chat/uploadImage", "/ws/**").permitAll()
+                    .anyRequest().authenticated()
+            )
+            .httpBasic(httpBasic -> {}) // Configure HTTP Basic Authentication
+            .csrf(AbstractHttpConfigurer::disable) // Disable CSRF for simplicity (optional)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource())); // Add CORS configuration
 
         return http.build();
     }
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:8081")); // Allow your frontend origin
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Allowed methods
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type")); // Allowed headers
+        configuration.setAllowCredentials(true); // Allow credentials (e.g., cookies or Authorization headers)
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration); // Apply to all endpoints
+        return source;
+    }
 }
+
 

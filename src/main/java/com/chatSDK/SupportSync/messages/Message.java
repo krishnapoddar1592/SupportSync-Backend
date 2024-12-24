@@ -28,7 +28,17 @@ public class Message {
 
     private LocalDateTime timestamp;
 
-    // Getters and Setters
+    @Column(nullable = true)
+    private String imageUrl; // Path to the stored image or Base64 string
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+// Getters and Setters
 
 
     public ChatSession getChatSession() {
@@ -79,6 +89,17 @@ public class Message {
         this.sender = sender;
         this.chatSession = chatSession;
         this.timestamp = LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault());
+    }
+
+    public Message(ChatSession chatSession, AppUser sender, String content, long timestamp, String imageUrl) {
+        this.chatSession = chatSession;
+        this.sender = sender;
+        this.content = content;
+        this.timestamp = LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault());
+        this.imageUrl = imageUrl;
+    }
+    public Message(){
+
     }
 }
 

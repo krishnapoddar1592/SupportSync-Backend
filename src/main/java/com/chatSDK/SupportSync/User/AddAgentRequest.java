@@ -1,9 +1,11 @@
 package com.chatSDK.SupportSync.User;
 
 import com.chatSDK.SupportSync.ChatSession.ChatSession;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class AddAgentRequest {
-    private AppUser user;
+    @JsonProperty("agent")
+    private AppUser agent;
     private ChatSession sessionTemp;
 
     public AddAgentRequest(){
@@ -11,11 +13,11 @@ public class AddAgentRequest {
     }
 
     public AppUser getUser() {
-        return user;
+        return agent;
     }
 
-    public void setUser(AppUser user) {
-        this.user = user;
+    public void setUser(AppUser agent) {
+        this.agent = agent;
     }
 
     public ChatSession getSessionTemp() {
@@ -26,15 +28,15 @@ public class AddAgentRequest {
         this.sessionTemp = sessionTemp;
     }
 
-    public AddAgentRequest(AppUser user, ChatSession sessionTemp) {
-        this.user = user;
+    public AddAgentRequest(AppUser agent, ChatSession sessionTemp) {
+        this.agent = agent;
         this.sessionTemp = sessionTemp;
     }
 
     @Override
     public String toString() {
         return "AddAgentRequest{" +
-                "user=" + user +
+                "agent=" + agent +
                 ", sessionTemp=" + sessionTemp +
                 '}';
     }
