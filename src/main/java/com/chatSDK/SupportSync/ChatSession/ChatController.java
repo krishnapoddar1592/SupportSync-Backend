@@ -103,9 +103,9 @@ public class ChatController {
 
     @PostMapping("/chat.startSession")
     @CrossOrigin(origins = "http://localhost:8081")
-    public ChatSession startChatSession(@RequestBody AppUser user) {
+    public ResponseEntity<ChatSession> startChatSession(@RequestBody AppUser user) {
 
-        if (user.getId() == null) {
+        if (user.getId()!=null && userRepository.findById(user.getId()).isEmpty()) {
             userRepository.save(user);
         }
 
@@ -118,7 +118,7 @@ public class ChatController {
         messagingTemplate.convertAndSend("/topic/activeSessions", chatSession);
 
         // Return a response entity with the created chat session
-        return chatSession;
+        return ResponseEntity.ok(chatSession);
     }
 
     @PostMapping("/chat/uploadImage")
