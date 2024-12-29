@@ -29,7 +29,8 @@ public class AppUser {
                 '}';
     }
 
-    public AppUser(String username, UserRole role) {
+    public AppUser(Long id,String username, UserRole role) {
+        this.id=id;
         this.username = username;
         this.role = role;
     }
