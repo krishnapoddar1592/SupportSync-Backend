@@ -7,6 +7,7 @@ import com.chatSDK.SupportSync.User.AddAgentRequest;
 import com.chatSDK.SupportSync.User.AppUser;
 import com.chatSDK.SupportSync.messages.Message;
 import com.chatSDK.SupportSync.messages.UploadImageRequest;
+import com.chatSDK.SupportSync.services.S3Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -18,10 +19,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -111,33 +110,26 @@ public class ChatController {
         return ResponseEntity.ok(chatSession);
     }
 
+    @Autowired
+    private S3Service s3Service;
+
     @PostMapping("/chat/uploadImage")
     @CrossOrigin(origins = "http://localhost:8081")
     public ResponseEntity<?> uploadImage(@ModelAttribute UploadImageRequest request) {
         MultipartFile file = request.getFile();
         Long userId = request.getUserId();
 
-        if (file.isEmpty() || userId == null || userId==-1) {
+        if (file.isEmpty() || userId == null || userId == -1) {
             return ResponseEntity.badRequest().body("Invalid request. File or User ID is missing.");
         }
 
         try {
-            // Generate a unique filename using userId and timestamp
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-            String uniqueFilename = userId + "_" + timestamp + "_" + file.getOriginalFilename();
-
-            // Save the file to the server
-            String imagePath = uploadDir + uniqueFilename;
-            String accessPath = accessDir + uniqueFilename;
-
-            file.transferTo(new File(imagePath));
-            return ResponseEntity.ok(Map.of("filePath", accessPath));
+            // Upload to S3 and get the URL
+            String fileUrl = s3Service.uploadFile(file);
+            return ResponseEntity.ok(Map.of("filePath", fileUrl));
         } catch (IOException e) {
             System.out.println("Error uploading image: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading image");
-        } catch (Exception e) {
-            System.out.println("Unexpected error: " + e.getMessage());
-            return ResponseEntity.internalServerError().body("Unexpected error occurred");
         }
     }
 
