@@ -25,6 +25,17 @@ public class ChatSession {
     private LocalDateTime startedAt;
     private LocalDateTime endedAt;
 
+    public IssueCategory getIssueCategory() {
+        return issueCategory;
+    }
+
+    public void setIssueCategory(IssueCategory issueCategory) {
+        this.issueCategory = issueCategory;
+    }
+
+    private IssueCategory issueCategory;
+
+
     public AppUser getUser() {
         return user;
     }
@@ -57,6 +68,7 @@ public class ChatSession {
                 ", agent=" + agent +
                 ", startedAt=" + startedAt +
                 ", endedAt=" + endedAt +
+                ", issueCategory="+issueCategory+
                 '}';
     }
 

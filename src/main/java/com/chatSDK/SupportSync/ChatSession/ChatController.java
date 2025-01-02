@@ -49,8 +49,13 @@ public class ChatController {
     // This method handles incoming messages and stores them in the database.
     @MessageMapping("/chat.sendMessage")
     public void sendMessage(Message message) {
+        AppUser user=message.getSender();
+        if(user!=null && userRepository.findById(user.getId()).isEmpty()){
+            userRepository.save(user);
+        }
         ChatSession session = chatSessionRepository.findById(message.getChatSession().getId())
                 .orElseThrow(() -> new RuntimeException("Chat session not found"));
+
 
         message.setTimestamp(System.currentTimeMillis());
         messageRepository.save(message);
@@ -92,16 +97,17 @@ public class ChatController {
 
     @PostMapping("/chat.startSession")
     @CrossOrigin(origins = "http://localhost:8081")
-    public ResponseEntity<ChatSession> startChatSession(@RequestBody AppUser user) {
+    public ResponseEntity<ChatSession> startChatSession(@RequestBody StartSessionRequest sessionRequest) {
 
-        if (user.getId()!=null && userRepository.findById(user.getId()).isEmpty()) {
-            userRepository.save(user);
+        if (sessionRequest.getUser().getId()!=null && userRepository.findById(sessionRequest.getUser().getId()).isEmpty()) {
+            userRepository.save(sessionRequest.getUser());
         }
 
         // Create and save the chat session
         ChatSession chatSession = new ChatSession();
-        chatSession.setUser(user);
+        chatSession.setUser(sessionRequest.getUser());
         chatSession.setStartedAt(System.currentTimeMillis());
+        chatSession.setIssueCategory(sessionRequest.getCategory());
         chatSessionRepository.save(chatSession);
         
         messagingTemplate.convertAndSend("/topic/activeSessions", chatSession);
