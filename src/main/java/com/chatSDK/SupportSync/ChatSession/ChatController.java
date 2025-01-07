@@ -63,6 +63,10 @@ public class ChatController {
                 throw new BadRequestException("Message content cannot be empty");
             }
 
+            AppUser user=userRepository.findById(message.getSender().getId())
+                    .orElseThrow(()-> new ResourceNotFoundException("User not found with id "+message.getSender().getId()));
+            userRepository.save(user);
+
             message.setTimestamp(System.currentTimeMillis());
             messageRepository.save(message);
 
